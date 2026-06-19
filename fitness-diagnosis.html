@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>体型诊断 · 训练计划</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-bg: #ffffff;
+    --color-bg-secondary: #f5f5f4;
+    --color-text-primary: #1a1a18;
+    --color-text-secondary: #5f5e5a;
+    --color-border: rgba(0,0,0,0.12);
+    --color-border-strong: rgba(0,0,0,0.22);
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #085041;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1c1c1a;
+      --color-bg-secondary: #2a2a27;
+      --color-text-primary: #f0efea;
+      --color-text-secondary: #9a9890;
+      --color-border: rgba(255,255,255,0.12);
+      --color-border-strong: rgba(255,255,255,0.22);
+      --green-light: #04342C;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .screen { display: none; padding: 0 1rem 2rem; }
+  .screen.active { display: block; }
+
+  /* Progress */
+  .progress-bar { height: 3px; background: var(--color-border); margin: 0 0 1.5rem; border-radius: 2px; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.35s ease; }
+
+  /* Question */
+  .q-meta { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; letter-spacing: 0.04em; }
+  .q-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.25rem; line-height: 1.45; }
+
+  /* Options */
+  .option-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+  .opt {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .opt:active { transform: scale(0.99); }
+  .opt.selected { border-color: var(--green); background: var(--green-light); }
+  .opt-icon { font-size: 20px; width: 28px; text-align: center; color: var(--color-text-secondary); flex-shrink: 0; }
+  .opt.selected .opt-icon { color: var(--green-dark); }
+  .opt-text { font-size: 15px; color: var(--color-text-primary); font-weight: 500; }
+  .opt-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .opt.selected .opt-text { color: var(--green-dark); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 10px; padding-top: 0.5rem; }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--color-border-strong);
+    background: transparent;
+    color: var(--color-text-primary);
+    transition: background 0.15s, opacity 0.15s;
+    -webkit-appearance: none;
+  }
+  .btn:active { background: var(--color-bg-secondary); }
+  .btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn.primary:active { background: var(--green-dark); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Sliders */
+  .slider-section { margin-bottom: 1.5rem; }
+  .slider-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-label span { font-size: 14px; color: var(--color-text-secondary); }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type=range] {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--color-border);
+    outline: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px var(--green);
+    cursor: pointer;
+  }
+  .slider-val { font-size: 16px; font-weight: 600; color: var(--color-text-primary); min-width: 52px; text-align: right; }
+
+  /* BMI card */
+  .bmi-card {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .bmi-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .bmi-top span { font-size: 13px; color: var(--color-text-secondary); }
+  .bmi-num { font-size: 22px; font-weight: 700; color: var(--color-text-primary); }
+  .bmi-bar-wrap { height: 8px; border-radius: 4px; display: flex; position: relative; overflow: visible; }
+  .bmi-seg:first-child { border-radius: 4px 0 0 4px; background: #5DCAA5; flex: 1; }
+  .bmi-seg:nth-child(2) { background: #1D9E75; flex: 1.4; }
+  .bmi-seg:nth-child(3) { background: #EF9F27; flex: 1; }
+  .bmi-seg:last-child { border-radius: 0 4px 4px 0; background: #E24B4A; flex: 1; }
+  .bmi-pointer {
+    position: absolute; top: -5px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid var(--green);
+    transform: translateX(-50%);
+    transition: left 0.3s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .bmi-scale { display: flex; justify-content: space-between; margin-top: 6px; }
+  .bmi-scale span { font-size: 10px; color: var(--color-text-secondary); }
+  .bmi-status { margin-top: 8px; font-size: 13px; font-weight: 600; }
+
+  /* Welcome */
+  .welcome-hero {
+    text-align: center;
+    padding: 2.5rem 0 1.5rem;
+  }
+  .hero-icon {
+    width: 72px; height: 72px;
+    background: var(--green-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+  }
+  .hero-icon i { font-size: 32px; color: var(--green); }
+  .welcome-hero h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .welcome-hero p { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; }
+  .feature-list { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0; }
+  .feature-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .feature-item:last-child { border-bottom: none; }
+  .feature-item i { font-size: 18px; color: var(--green); flex-shrink: 0; }
+  .feature-item span { font-size: 14px; color: var(--color-text-secondary); }
+
+  /* Result */
+  .result-hero {
+    background: var(--green-light);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .result-emoji { font-size: 40px; line-height: 1; }
+  .result-name { font-size: 17px; font-weight: 700; color: var(--color-text-primary); }
+  .result-sub { font-size: 13px; color: var(--color-text-secondary); margin-top: 3px; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-num { font-size: 24px; font-weight: 700; color: var(--color-text-primary); }
+  .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 3px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag { font-size: 12px; padding: 4px 10px; border-radius: 99px; font-weight: 500; }
+  .tag-green { background: #E1F5EE; color: #0F6E56; }
+  .tag-amber { background: #FAEEDA; color: #854F0B; }
+  .tag-blue { background: #E6F1FB; color: #185FA5; }
+  .tag-red { background: #FCEBEB; color: #A32D2D; }
+
+  /* Tabs */
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab-btn {
+    flex: 1; padding: 10px 6px;
+    border-radius: var(--radius-md);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+  .tab-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+
+  /* Plan */
+  .panel { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; }
+  .panel-title { font-size: 11px; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .plan-item { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-border); align-items: flex-start; }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-day { font-size: 11px; font-weight: 700; color: var(--green); min-width: 32px; padding-top: 3px; }
+  .plan-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+  .plan-detail { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; line-height: 1.5; }
+
+  /* AI text */
+  .ai-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.8; }
+
+  /* Diet */
+  .diet-item { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-border); align-items: flex-start; }
+  .diet-item:last-child { border-bottom: none; }
+  .diet-icon { font-size: 18px; color: var(--green); flex-shrink: 0; padding-top: 1px; }
+  .diet-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+  .diet-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+
+  /* Loading */
+  .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--color-text-secondary); }
+
+  /* Misc */
+  .section-gap { margin-bottom: 12px; }
+  .restart-btn {
+    width: 100%; padding: 14px;
+    margin-top: 12px; margin-bottom: 2rem;
+    border-radius: var(--radius-md);
+    font-size: 15px; font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--color-border-strong);
+    background: transparent;
+    color: var(--color-text-primary);
+    -webkit-appearance: none;
+  }
+  .result-header { padding: 1.5rem 0 1rem; }
+  .result-header h2 { font-size: 16px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- Welcome -->
+<div id="screen-welcome" class="screen active">
+  <div class="welcome-hero">
+    <div class="hero-icon"><i class="ti ti-barbell"></i></div>
+    <h1>体型诊断</h1>
+    <p>回答几个问题<br>获取专属训练计划</p>
+  </div>
+  <div class="feature-list">
+    <div class="feature-item"><i class="ti ti-clock"></i><span>约 2 分钟完成</span></div>
+    <div class="feature-item"><i class="ti ti-sparkles"></i><span>AI 分析体型特征</span></div>
+    <div class="feature-item"><i class="ti ti-calendar"></i><span>生成个性化周训练计划</span></div>
+    <div class="feature-item"><i class="ti ti-salad"></i><span>配套饮食关键原则</span></div>
+  </div>
+  <button class="btn primary" onclick="goTo('screen-bmi')">开始测评 →</button>
+</div>
+
+<!-- Step 1: BMI -->
+<div id="screen-bmi" class="screen">
+  <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+  <div class="q-meta">1 / 5</div>
+  <div class="q-title">身体基本数据</div>
+  <div class="slider-section">
+    <div class="slider-label"><span>身高</span><span>cm</span></div>
+    <div class="slider-row">
+      <input type="range" min="145" max="200" value="168" step="1" id="height-slider">
+      <span class="slider-val" id="height-val">168</span>
+    </div>
+  </div>
+  <div class="slider-section">
+    <div class="slider-label"><span>体重</span><span>kg</span></div>
+    <div class="slider-row">
+      <input type="range" min="40" max="120" value="60" step="1" id="weight-slider">
+      <span class="slider-val" id="weight-val">60</span>
+    </div>
+  </div>
+  <div class="bmi-card">
+    <div class="bmi-top">
+      <span>BMI 指数</span>
+      <span class="bmi-num" id="bmi-val">21.3</span>
+    </div>
+    <div class="bmi-bar-wrap">
+      <div class="bmi-seg"></div><div class="bmi-seg"></div>
+      <div class="bmi-seg"></div><div class="bmi-seg"></div>
+      <div class="bmi-pointer" id="bmi-pointer" style="left:33%"></div>
+    </div>
+    <div class="bmi-scale">
+      <span>偏瘦 &lt;18.5</span><span>正常 18.5-24</span><span>偏重 24-28</span><span>肥胖 &gt;28</span>
+    </div>
+    <div class="bmi-status" id="bmi-status" style="color:#1D9E75;">正常范围 ✓</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-welcome')">返回</button>
+    <button class="btn primary" onclick="goTo('screen-gender')">下一步</button>
+  </div>
+</div>
+
+<!-- Step 2: Gender + Age -->
+<div id="screen-gender" class="screen">
+  <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+  <div class="q-meta">2 / 5</div>
+  <div class="q-title">性别</div>
+  <div class="option-grid">
+    <div class="opt" onclick="sel(this,'gender','male')">
+      <i class="ti ti-user opt-icon"></i>
+      <div><div class="opt-text">男性</div></div>
+    </div>
+    <div class="opt" onclick="sel(this,'gender','female')">
+      <i class="ti ti-user opt-icon"></i>
+      <div><div class="opt-text">女性</div></div>
+    </div>
+  </div>
+  <div class="q-title">年龄段</div>
+  <div class="option-grid">
+    <div class="opt" onclick="sel(this,'age','18-25')"><i class="ti ti-flame opt-icon"></i><div><div class="opt-text">18 – 25 岁</div></div></div>
+    <div class="opt" onclick="sel(this,'age','26-35')"><i class="ti ti-trending-up opt-icon"></i><div><div class="opt-text">26 – 35 岁</div></div></div>
+    <div class="opt" onclick="sel(this,'age','36-45')"><i class="ti ti-activity opt-icon"></i><div><div class="opt-text">36 – 45 岁</div></div></div>
+    <div class="opt" onclick="sel(this,'age','46+')"><i class="ti ti-heart opt-icon"></i><div><div class="opt-text">46 岁以上</div></div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-bmi')">返回</button>
+    <button class="btn primary" id="btn-gender-next" onclick="goTo('screen-shape')" disabled>下一步</button>
+  </div>
+</div>
+
+<!-- Step 3: Shape -->
+<div id="screen-shape" class="screen">
+  <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+  <div class="q-meta">3 / 5</div>
+  <div class="q-title">描述你的体型</div>
+  <div class="option-grid">
+    <div class="opt" onclick="sel(this,'shape','ecto')"><i class="ti ti-user-minus opt-icon"></i><div><div class="opt-text">偏瘦型</div><div class="opt-sub">四肢细长，增肌困难</div></div></div>
+    <div class="opt" onclick="sel(this,'shape','meso')"><i class="ti ti-user-check opt-icon"></i><div><div class="opt-text">匀称型</div><div class="opt-sub">骨架适中，肌肉轮廓尚可</div></div></div>
+    <div class="opt" onclick="sel(this,'shape','endo')"><i class="ti ti-user-plus opt-icon"></i><div><div class="opt-text">偏胖型</div><div class="opt-sub">易囤脂肪，减脂较慢</div></div></div>
+    <div class="opt" onclick="sel(this,'shape','apple')"><i class="ti ti-circle opt-icon"></i><div><div class="opt-text">苹果型</div><div class="opt-sub">腹部脂肪集中</div></div></div>
+    <div class="opt" onclick="sel(this,'shape','pear')"><i class="ti ti-triangle opt-icon"></i><div><div class="opt-text">梨型</div><div class="opt-sub">臀腿脂肪偏多</div></div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-gender')">返回</button>
+    <button class="btn primary" id="btn-shape-next" onclick="goTo('screen-goal')" disabled>下一步</button>
+  </div>
+</div>
+
+<!-- Step 4: Goal -->
+<div id="screen-goal" class="screen">
+  <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+  <div class="q-meta">4 / 5</div>
+  <div class="q-title">主要健身目标</div>
+  <div class="option-grid">
+    <div class="opt" onclick="sel(this,'goal','lose')"><i class="ti ti-flame opt-icon"></i><div><div class="opt-text">减脂塑形</div><div class="opt-sub">降低体脂率，线条更清晰</div></div></div>
+    <div class="opt" onclick="sel(this,'goal','gain')"><i class="ti ti-barbell opt-icon"></i><div><div class="opt-text">增肌增重</div><div class="opt-sub">增加肌肉量，提升力量</div></div></div>
+    <div class="opt" onclick="sel(this,'goal','tone')"><i class="ti ti-body-scan opt-icon"></i><div><div class="opt-text">塑形紧致</div><div class="opt-sub">保持体重，提高肌肉质量</div></div></div>
+    <div class="opt" onclick="sel(this,'goal','health')"><i class="ti ti-heart-rate opt-icon"></i><div><div class="opt-text">健康体能</div><div class="opt-sub">改善心肺耐力和灵活性</div></div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-shape')">返回</button>
+    <button class="btn primary" id="btn-goal-next" onclick="goTo('screen-freq')" disabled>下一步</button>
+  </div>
+</div>
+
+<!-- Step 5: Frequency -->
+<div id="screen-freq" class="screen">
+  <div class="progress-bar"><div class="progress-fill" style="width:96%"></div></div>
+  <div class="q-meta">5 / 5</div>
+  <div class="q-title">每周可训练天数</div>
+  <div class="option-grid">
+    <div class="opt" onclick="sel(this,'freq','2')"><i class="ti ti-calendar opt-icon"></i><div><div class="opt-text">2 天</div><div class="opt-sub">轻松入门节奏</div></div></div>
+    <div class="opt" onclick="sel(this,'freq','3')"><i class="ti ti-calendar opt-icon"></i><div><div class="opt-text">3 天</div><div class="opt-sub">标准训练频率</div></div></div>
+    <div class="opt" onclick="sel(this,'freq','4')"><i class="ti ti-calendar opt-icon"></i><div><div class="opt-text">4 天</div><div class="opt-sub">进阶训练强度</div></div></div>
+    <div class="opt" onclick="sel(this,'freq','5+')"><i class="ti ti-calendar opt-icon"></i><div><div class="opt-text">5 天以上</div><div class="opt-sub">高强度专项训练</div></div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="goTo('screen-goal')">返回</button>
+    <button class="btn primary" id="btn-freq-next" onclick="generate()" disabled>生成方案 ✦</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="screen-loading" class="screen">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">正在分析你的体型数据...</div>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="screen-result" class="screen">
+  <div class="result-header"><h2>你的专属方案</h2></div>
+  <div class="result-hero">
+    <div class="result-emoji" id="res-emoji">💪</div>
+    <div>
+      <div class="result-name" id="res-name">—</div>
+      <div class="result-sub" id="res-sub">—</div>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num" id="res-bmi">—</div><div class="stat-label">BMI</div></div>
+    <div class="stat"><div class="stat-num" id="res-fat">—</div><div class="stat-label">预估体脂率</div></div>
+  </div>
+  <div class="tag-row" id="res-tags"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-plan" onclick="switchTab('plan')">训练计划</button>
+    <button class="tab-btn" id="tab-ai" onclick="switchTab('ai')">AI 建议</button>
+    <button class="tab-btn" id="tab-diet" onclick="switchTab('diet')">饮食要点</button>
+  </div>
+
+  <div class="panel" id="panel-plan">
+    <div class="panel-title">本周训练安排</div>
+    <div id="plan-list"></div>
+  </div>
+  <div class="panel" id="panel-ai" style="display:none;">
+    <div class="panel-title">AI 个性化建议</div>
+    <div class="ai-text" id="ai-text">加载中...</div>
+  </div>
+  <div class="panel" id="panel-diet" style="display:none;">
+    <div class="panel-title">饮食关键原则</div>
+    <div id="diet-list"></div>
+  </div>
+
+  <button class="restart-btn" onclick="restart()">↺ 重新测评</button>
+</div>
+
+<script>
+const A = { height: 168, weight: 60, gender: null, age: null, shape: null, goal: null, freq: null };
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function updateBMI() {
+  const h = parseInt(document.getElementById('height-slider').value);
+  const w = parseInt(document.getElementById('weight-slider').value);
+  document.getElementById('height-val').textContent = h;
+  document.getElementById('weight-val').textContent = w;
+  A.height = h; A.weight = w;
+  const bmi = w / Math.pow(h / 100, 2);
+  document.getElementById('bmi-val').textContent = bmi.toFixed(1);
+  let pct, status, color;
+  if (bmi < 18.5) { pct = (bmi - 10) / 8.5 * 25; status = '偏轻，注意营养摄入'; color = '#5DCAA5'; }
+  else if (bmi < 24) { pct = 25 + (bmi - 18.5) / 5.5 * 30; status = '正常范围 ✓'; color = '#1D9E75'; }
+  else if (bmi < 28) { pct = 55 + (bmi - 24) / 4 * 22; status = '偏重，建议适度控制'; color = '#EF9F27'; }
+  else { pct = 77 + Math.min((bmi - 28) / 8, 1) * 20; status = '肥胖，建议积极减脂'; color = '#E24B4A'; }
+  document.getElementById('bmi-pointer').style.left = Math.max(3, Math.min(97, pct)) + '%';
+  const el = document.getElementById('bmi-status');
+  el.textContent = status; el.style.color = color;
+}
+
+function sel(el, key, val) {
+  document.querySelectorAll(`.opt[data-key="${key}"]`).forEach(o => o.classList.remove('selected'));
+  el.setAttribute('data-key', key);
+  document.querySelectorAll(`.opt[data-key="${key}"]`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  A[key] = val;
+  if (key === 'gender' || key === 'age') {
+    const ok = document.querySelector('.opt[data-key="gender"].selected') &&
+               document.querySelector('.opt[data-key="age"].selected');
+    document.getElementById('btn-gender-next').disabled = !ok;
+  }
+  const map = { shape: 'btn-shape-next', goal: 'btn-goal-next', freq: 'btn-freq-next' };
+  if (map[key]) document.getElementById(map[key]).disabled = false;
+}
+
+// Fix: assign data-key on first click so querySelectorAll works
+document.querySelectorAll('.opt').forEach(el => {
+  const fn = el.getAttribute('onclick');
+  const m = fn && fn.match(/sel\(this,'([^']+)'/);
+  if (m) el.setAttribute('data-key', m[1]);
+});
+
+const PLANS = {
+  lose: {
+    2: [{day:'周二',name:'全身力量 + HIIT',detail:'深蹲 3×15 · 俯卧撑 3×12 · 波比跳 4×20s'},{day:'周六',name:'有氧塑形',detail:'跑步 30min · 平板支撑 3×45s · 臀桥 3×15'}],
+    3: [{day:'周一',name:'上肢力量',detail:'哑铃推举 3×12 · 划船 3×10 · 二头弯举 3×12'},{day:'周三',name:'HIIT 燃脂',detail:'间歇跑 20min · 开合跳 4×30s · 波比跳 4×15'},{day:'周五',name:'下肢 + 核心',detail:'深蹲 4×15 · 箭步蹲 3×12 · 卷腹 3×20'}],
+    4: [{day:'周一',name:'上肢推',detail:'卧推 4×10 · 哑铃推举 3×12 · 三头下压 3×15'},{day:'周三',name:'下肢推',detail:'深蹲 4×12 · 腿举 3×15 · 小腿提踵 4×20'},{day:'周五',name:'上肢拉 + HIIT',detail:'引体向上 3×8 · 划船 3×10 + 20min 有氧'},{day:'周日',name:'下肢拉 + 核心',detail:'硬拉 3×8 · 臀桥 4×15 · 俄罗斯转体 3×20'}]
+  },
+  gain: {
+    2: [{day:'周二',name:'全身复合 A',detail:'深蹲 4×6 · 卧推 4×6 · 硬拉 3×5'},{day:'周六',name:'全身复合 B',detail:'推举 4×6 · 引体向上 4×6 · 罗马尼亚硬拉 3×8'}],
+    3: [{day:'周一',name:'胸 + 肩 + 三头',detail:'卧推 4×8 · 飞鸟 3×12 · 推举 3×10 · 三头 3×12'},{day:'周三',name:'背 + 二头',detail:'引体向上 4×6 · 划船 4×8 · 弯举 3×12'},{day:'周五',name:'腿 + 核心',detail:'深蹲 5×5 · 腿举 4×10 · 硬拉 3×5 · 卷腹 3×15'}],
+    4: [{day:'周一',name:'胸 · 推力日',detail:'卧推 5×5 · 哑铃卧推 3×10 · 飞鸟 3×12'},{day:'周二',name:'背 · 拉力日',detail:'硬拉 4×5 · 引体 4×8 · 坐姿划船 3×10'},{day:'周四',name:'肩 + 手臂',detail:'推举 4×8 · 侧平举 4×12 · 弯举 + 三头 各 3×12'},{day:'周六',name:'腿部强化',detail:'深蹲 5×5 · 腿举 4×10 · 腿弯举 4×10 · 提踵 4×15'}]
+  },
+  tone: {
+    2: [{day:'周二',name:'功能性力量',detail:'TRX / 哑铃全身巡回 · 3 轮 · 每动作 45s'},{day:'周六',name:'有氧 + 拉伸',detail:'慢跑 25min · 全身动态拉伸 15min'}],
+    3: [{day:'周一',name:'功能性力量',detail:'TRX / 哑铃全身 · 3 轮循环 · 每动作 45s'},{day:'周三',name:'核心 + 稳定性',detail:'普拉提序列 · 平板 · 鸟狗式 · 侧平板'},{day:'周五',name:'有氧 + 拉伸',detail:'慢跑或骑行 30min · 全身动态拉伸 15min'}],
+    4: [{day:'周一',name:'上肢塑形',detail:'哑铃轻重量高次数 · 3×15-20'},{day:'周二',name:'下肢塑形',detail:'深蹲 · 臀推 · 腿弯举 · 各 4×15'},{day:'周四',name:'核心强化',detail:'死虫式 · 卷腹 · 侧弯 · 各 3×20'},{day:'周六',name:'有氧 + 全身',detail:'跳绳 15min + 体重巡回 20min'}]
+  },
+  health: {
+    2: [{day:'周二',name:'有氧耐力',detail:'快走或慢跑 40min · 心率 120-140 bpm'},{day:'周六',name:'灵活性 + 力量',detail:'瑜伽序列 20min · 轻重量全身 20min'}],
+    3: [{day:'周一',name:'心肺训练',detail:'游泳或慢跑 30min · 低强度有氧'},{day:'周三',name:'功能性力量',detail:'深蹲 · 推拉 · 核心 · 各 3×12'},{day:'周六',name:'恢复 + 灵活',detail:'瑜伽或拉伸 30min · 泡沫轴放松'}],
+    4: [{day:'周一',name:'心肺有氧',detail:'慢跑 35min'},{day:'周三',name:'全身力量',detail:'各肌群 2×15，轻重量'},{day:'周五',name:'灵活性训练',detail:'瑜伽 30min'},{day:'周日',name:'低强度活动',detail:'散步 45min 或骑行'}]
+  }
+};
+
+const DIETS = {
+  lose: [
+    {icon:'ti-scale',name:'热量缺口',sub:'每日减少 300-500 kcal，不宜急剧节食'},
+    {icon:'ti-meat',name:'高蛋白优先',sub:'每公斤体重 1.6-2g 蛋白质，保护肌肉'},
+    {icon:'ti-droplet',name:'充足饮水',sub:'每日 2-2.5L，训练前后各 500ml'},
+    {icon:'ti-clock',name:'控制碳水时间',sub:'训练前后摄入碳水，其余时段减少精制糖'}
+  ],
+  gain: [
+    {icon:'ti-plus',name:'热量盈余',sub:'每日增加 300-500 kcal，缓慢增重'},
+    {icon:'ti-meat',name:'蛋白质充足',sub:'每公斤体重 1.8-2.2g，优选鸡胸 / 蛋 / 豆腐'},
+    {icon:'ti-bread',name:'碳水为能量',sub:'训练日加量碳水，支持训练表现和恢复'},
+    {icon:'ti-clock',name:'训练后30分钟',sub:'快速补充蛋白质 + 碳水（1:3 比例）'}
+  ],
+  tone: [
+    {icon:'ti-scale',name:'维持热量平衡',sub:'热量摄入与消耗基本持平'},
+    {icon:'ti-leaf',name:'食物多样化',sub:'优质蛋白 + 复合碳水 + 健康脂肪均衡摄入'},
+    {icon:'ti-clock',name:'规律进餐',sub:'三餐均衡，避免暴饮暴食'},
+    {icon:'ti-droplet',name:'减少加工食品',sub:'优先天然食材，减少添加糖和反式脂肪'}
+  ],
+  health: [
+    {icon:'ti-apple',name:'均衡饮食',sub:'参照膳食宝塔，五大类食物均衡摄入'},
+    {icon:'ti-fish',name:'Omega-3 脂肪酸',sub:'每周 2 次鱼类，有助心血管健康'},
+    {icon:'ti-salad',name:'蔬菜优先',sub:'每日 500g 蔬菜，保证维生素和膳食纤维'},
+    {icon:'ti-droplet',name:'减少精制糖',sub:'用全谷物替代白米白面，稳定血糖'}
+  ]
+};
+
+const SHAPES = {
+  ecto: {name:'外胚型 · 偏瘦体质',emoji:'🏃',tags:[{t:'新陈代谢快',c:'tag-green'},{t:'增肌较难',c:'tag-amber'},{t:'体脂自然低',c:'tag-green'}],fat:[10,16]},
+  meso: {name:'中胚型 · 运动员体质',emoji:'💪',tags:[{t:'肌肉响应佳',c:'tag-green'},{t:'骨架适中',c:'tag-blue'},{t:'各目标均适合',c:'tag-green'}],fat:[15,22]},
+  endo: {name:'内胚型 · 易胖体质',emoji:'🔥',tags:[{t:'肌肉量潜力大',c:'tag-blue'},{t:'减脂需持续',c:'tag-amber'},{t:'恢复较快',c:'tag-green'}],fat:[22,30]},
+  apple:{name:'苹果型 · 腹部囤脂',emoji:'🍎',tags:[{t:'腹部脂肪集中',c:'tag-amber'},{t:'内脏脂肪风险',c:'tag-red'},{t:'上肢偏灵活',c:'tag-green'}],fat:[20,28]},
+  pear: {name:'梨型 · 下肢囤脂',emoji:'🍐',tags:[{t:'臀腿脂肪偏多',c:'tag-amber'},{t:'上肢相对精瘦',c:'tag-green'},{t:'心血管风险低',c:'tag-green'}],fat:[22,30]}
+};
+
+const GOAL_NAMES = {lose:'减脂塑形',gain:'增肌增重',tone:'塑形紧致',health:'健康体能'};
+
+function freqKey(f) { const n = parseInt(f); return n <= 2 ? 2 : n <= 3 ? 3 : 4; }
+
+async function generate() {
+  goTo('screen-loading');
+  const msgs = ['正在分析你的体型数据...','匹配最佳训练方案...','AI 正在生成个性化建议...'];
+  let i = 0;
+  const t = setInterval(() => { document.getElementById('loading-text').textContent = msgs[Math.min(++i,2)]; }, 1300);
+
+  const bmi = (A.weight / Math.pow(A.height/100, 2)).toFixed(1);
+  const sh = SHAPES[A.shape];
+  const fat = Math.min(sh.fat[1], Math.max(sh.fat[0], sh.fat[0] + Math.round((parseFloat(bmi)-16)/20*(sh.fat[1]-sh.fat[0]))));
+  const fk = freqKey(A.freq);
+  const plan = (PLANS[A.goal] || PLANS.health)[fk] || Object.values(PLANS[A.goal]||PLANS.health)[0];
+  const diet = DIETS[A.goal] || DIETS.health;
+
+  const prompt = `你是一位专业健身教练和营养师。根据以下数据给出个性化建议（中文，200字以内，2-3段，语气亲切专业）：
+身高${A.height}cm，体重${A.weight}kg，BMI ${bmi}，性别${A.gender==='male'?'男':'女'}，年龄${A.age}岁
+体型：${sh.name}，目标：${GOAL_NAMES[A.goal]}，每周训练${A.freq}天
+请直接给建议，不重复数据，重点说体型特点和最需注意的训练与饮食要点。`;
+
+  let aiText = '';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const d = await r.json();
+    aiText = d.content?.find(b=>b.type==='text')?.text || '建议咨询专业教练获取详细指导。';
+  } catch(e) {
+    aiText = '网络异常，请参考上方训练计划和饮食要点，或咨询专业健身教练。';
+  }
+
+  clearInterval(t);
+
+  document.getElementById('res-emoji').textContent = sh.emoji;
+  document.getElementById('res-name').textContent = sh.name;
+  document.getElementById('res-sub').textContent = '目标：' + GOAL_NAMES[A.goal];
+  document.getElementById('res-bmi').textContent = bmi;
+  document.getElementById('res-fat').textContent = fat + '%';
+  document.getElementById('res-tags').innerHTML = sh.tags.map(g=>`<span class="tag ${g.c}">${g.t}</span>`).join('');
+  document.getElementById('plan-list').innerHTML = plan.map(p=>`
+    <div class="plan-item">
+      <div class="plan-day">${p.day}</div>
+      <div><div class="plan-name">${p.name}</div><div class="plan-detail">${p.detail}</div></div>
+    </div>`).join('');
+  document.getElementById('ai-text').innerHTML = aiText.replace(/\n/g,'<br>');
+  document.getElementById('diet-list').innerHTML = diet.map(d=>`
+    <div class="diet-item">
+      <i class="ti ${d.icon} diet-icon"></i>
+      <div><div class="diet-name">${d.name}</div><div class="diet-sub">${d.sub}</div></div>
+    </div>`).join('');
+
+  goTo('screen-result');
+}
+
+function switchTab(tab) {
+  ['plan','ai','diet'].forEach(k => {
+    document.getElementById('panel-'+k).style.display = k===tab?'block':'none';
+    document.getElementById('tab-'+k).className = 'tab-btn'+(k===tab?' active':'');
+  });
+}
+
+function restart() {
+  Object.keys(A).forEach(k => { if(k!=='height'&&k!=='weight') A[k]=null; });
+  document.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
+  ['btn-gender-next','btn-shape-next','btn-goal-next','btn-freq-next'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.disabled=true;
+  });
+  goTo('screen-welcome');
+}
+
+document.getElementById('height-slider').addEventListener('input', updateBMI);
+document.getElementById('weight-slider').addEventListener('input', updateBMI);
+updateBMI();
+</script>
+</body>
+</html>
